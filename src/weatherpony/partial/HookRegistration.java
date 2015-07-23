@@ -27,7 +27,7 @@ public class HookRegistration implements IHookRegistrar{
 				Class inClass = each.getDeclaringClass();
 				String methodName = each.getName();
 				final String params = "Lweatherpony/partial/HookListenerHelper;";
-				//TODO
+				//TODO - finish support for annotated-method based hooks
 			}
 		}
 	}

@@ -14,9 +14,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -243,9 +245,16 @@ public class PMLModManager implements IPMLPluginManagement{
 		}
 		if(!errors.isEmpty()){
 			System.out.println("found errored mods:");
+			List<IPMLMod> erroredmods = new ArrayList();
 			for(PMLErrorNote each : errors){
 				System.out.println(" "+each.errored.modName+": ");
 				each.error.printStackTrace(System.out);
+				each.errored.alertOfSelfError();
+				erroredmods.add(each.errored);
+			}
+			erroredmods = Collections.unmodifiableList(erroredmods);
+			for(IPMLMod eachmod : mods){
+				eachmod.alertOfErroredMods(erroredmods);
 			}
 		}
 	}

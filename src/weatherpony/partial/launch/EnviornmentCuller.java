@@ -32,7 +32,7 @@ public final class EnviornmentCuller<Env extends Enum<Env> & IEnviornment<Env>> 
 		List<String> annotationdescs = new ArrayList();
 		for(int curann=0;curann<annotations.length;curann++){
 			annotationdescs.add(Type.getDescriptor(annotations[curann]));
-			for(int curenv=0;curenv<0;curenv++){
+			for(int curenv=0;curenv<enviornments.length;curenv++){
 				this.keeps[curann][curenv] = setup.shouldKeepCode(annotations[curann], env, enviornments[curenv]);
 			}
 		}
@@ -55,14 +55,14 @@ public final class EnviornmentCuller<Env extends Enum<Env> & IEnviornment<Env>> 
 				int annotationIndex = this.annotationDescs.indexOf(each.desc);
 				if(annotationIndex == -1)
 					continue;
-				int envIndex = this.enviornmentNames.indexOf(each.values.get(1));
+				int envIndex = this.enviornmentNames.indexOf(((String[])each.values.get(1))[1]);
 				if(envIndex == -1)
-					throw new UnsupportedOperationException();
+					throw new UnsupportedOperationException("Got a "+((String[])each.values.get(1))[1]+" but was expecting one of these: "+this.enviornmentNames.toString());
 				boolean keep = this.keeps[annotationIndex][envIndex];
 				if(keep)
 					continue;
 				else
-					throw new RuntimeException("This class was annotated to be culled for the running enviornment", new ClassNotFoundException(name));
+					throw new RuntimeException("This class was annotated to be culled for the running enviornment ("+this.env+","+((String[])each.values.get(1))[1]+")", new ClassNotFoundException(name));
 			}
 		}
 		
@@ -73,9 +73,9 @@ public final class EnviornmentCuller<Env extends Enum<Env> & IEnviornment<Env>> 
 					int annotationIndex = this.annotationDescs.indexOf(each.desc);
 					if(annotationIndex == -1)
 						continue;
-					int envIndex = this.enviornmentNames.indexOf(each.values.get(1));
+					int envIndex = this.enviornmentNames.indexOf(((String[])each.values.get(1))[1]);
 					if(envIndex == -1)
-						throw new UnsupportedOperationException();
+						throw new UnsupportedOperationException("Got a "+((String[])each.values.get(1))[1]+" but was expecting one of these: "+this.enviornmentNames.toString());
 					boolean keep = this.keeps[annotationIndex][envIndex];
 					if(keep)
 						continue;
@@ -95,9 +95,9 @@ public final class EnviornmentCuller<Env extends Enum<Env> & IEnviornment<Env>> 
 					int annotationIndex = this.annotationDescs.indexOf(each.desc);
 					if(annotationIndex == -1)
 						continue;
-					int envIndex = this.enviornmentNames.indexOf(each.values.get(1));
+					int envIndex = this.enviornmentNames.indexOf(((String[])each.values.get(1))[1]);
 					if(envIndex == -1)
-						throw new UnsupportedOperationException();
+						throw new UnsupportedOperationException("Got a "+((String[])each.values.get(1))[1]+" but was expecting one of these: "+this.enviornmentNames.toString());
 					boolean keep = this.keeps[annotationIndex][envIndex];
 					if(keep)
 						continue;

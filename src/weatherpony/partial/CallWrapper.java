@@ -2,7 +2,8 @@ package weatherpony.partial;
 
 
 public abstract class CallWrapper<RetType>{
-	//this is for ASM-created implementations that operate on annotated methods TODO
+	//this is for ASM-created implementations that operate on annotated methods
+	//TODO - change the ASM to use to the newer constructor
 	@Deprecated
 	public CallWrapper(String className, String methodName, String methodDesc, WrapTiming timing){
 		this(new CallData.CallDataFactory()

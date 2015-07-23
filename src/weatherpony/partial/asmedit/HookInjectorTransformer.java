@@ -114,10 +114,17 @@ public class HookInjectorTransformer implements IClassManipulator{
 	}
 	@Override
 	public byte[] transformClass(ClassLoader loader, String className, byte[] bytes){
+		try{
 		if(bytes == null)
 			return null;//no code to look at...
 		if(className == null)
 			return bytes;//no name... it won't work with PML's name-based hook system
+		boolean debug = false;
+		if(className.equals(System.getProperty("pml.hookInjectionDebug"))){
+			debug = true;
+			System.err.println("PML-HookInjectorTransformer(debug): found target Class ("+System.getProperty("pml.hookInjectionDebug")+")");
+			System.err.println();
+		}
 		String transformed_slash = className.replace('.', '/');
 		ClassReader cr = new ClassReader(bytes);
 		ClassNode tree = new ClassNode();
@@ -138,8 +145,11 @@ public class HookInjectorTransformer implements IClassManipulator{
 			MethodNode methodnode = iter.next();
 			String methodName = methodnode.name;
 			String methodDesc = methodnode.desc;
-			
-			boolean needsToAlter = this.askForHookGeneration(className, methodName, methodDesc);
+			if(debug)
+				System.out.println("PML-HookInjectorTransformer(debug): about to check method - "+methodName+methodDesc);
+			boolean needsToAlter = this.askForHookGeneration(loader, className, methodName, methodDesc);
+			if(debug)
+				System.out.println("PML-HookInjectorTransformer(debug): method "+(needsToAlter?"does":"did not")+" need editing");
 			if(!needsToAlter)
 				continue;
 			
@@ -214,6 +224,10 @@ public class HookInjectorTransformer implements IClassManipulator{
 			return cw.toByteArray();
 		}
 		return bytes;//nothing changed.
+		}catch(Throwable e){
+			e.printStackTrace();
+			throw e;
+		}
 	}
 	
 	public static String mirrorName(String inClass, String method, String desc){
@@ -720,7 +734,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 	void registerProxy(CallWrapper proxy){
 		registerProxy(proxy.data.inClass, proxy.data.methodName, proxy.data.methodDesc, proxy);
 	}
-	boolean askForHookGeneration(String forClass, String method, String desc){
-		return GeneralHookManager.ASM_prep(forClass, method, desc);
+	boolean askForHookGeneration(ClassLoader from, String forClass, String method, String desc){
+		return GeneralHookManager.ASM_prep(from, forClass, method, desc);
 	}
 }

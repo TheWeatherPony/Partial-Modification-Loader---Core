@@ -64,14 +64,14 @@ public final class ClassData {
 		}
 		return className;
 	}
-	protected Iterator<String> get(String forClass){
+	protected Iterator<String> get(ClassLoader from, String forClass){
 		ExtentionData data = this.classMap.get(forClass);
 		if(data == null){
 			if(forClass.equals("java.lang.Object"))
 				return Iterators.emptyIterator();
 			//found a previously loaded, unscanned class.
 			try {
-				Class looking = Class.forName(forClass);
+				Class looking = from.loadClass(forClass);//Class.forName(forClass);
 				data = this.classMap.get(forClass);
 				if(data == null){//loaded in another ClassLoader
 					String superN = null;
@@ -94,17 +94,17 @@ public final class ClassData {
 		Iterator<String> s = data.extend == null ? Iterators.<String>emptyIterator() : Iterators.singletonIterator(data.extend);
 		return Iterators.concat(s,is);
 	}
-	public Collection<String> getAllSupers(String forClass){
+	public Collection<String> getAllSupers(ClassLoader from, String forClass){
 		Collection<String> ret = new HashSet();
 		Stack<Iterator<String>> temp = new Stack();
-		temp.push(this.get(forClass));
+		temp.push(this.get(from, forClass));
 		while(!temp.isEmpty()){
 			Iterator<String> each = temp.pop();
 			while(each.hasNext()){
 				String next = each.next();
 				if(!ret.contains(next)){
 					ret.add(next);
-					temp.push(this.get(next));
+					temp.push(this.get(from, next));
 				}
 			}
 		}

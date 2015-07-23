@@ -27,13 +27,13 @@ public class GeneralHookManager{
 	}
 	protected static GeneralHookManager INSTANCE;
 	private ObfuscationHelper3 obfhelp;
-	public static boolean ASM_prep(String inClass, String method, String desc){
-		return INSTANCE._ASM_prep_(inClass, method, desc);
+	public static boolean ASM_prep(ClassLoader fromLoader, String inClass, String method, String desc){
+		return INSTANCE._ASM_prep_(fromLoader, inClass, method, desc);
 	}
-	private boolean _ASM_prep_(String inClass, String method, String desc){
+	private boolean _ASM_prep_(ClassLoader fromLoader, String inClass, String method, String desc){
 		currentClass = inClass;
 		this.inClass = inClass;this.method = method;this.desc = desc;
-		List<ModHook> newhooklist = condense(getHookList(inClass, method, desc));
+		List<ModHook> newhooklist = condense(getHookList(fromLoader, inClass, method, desc));
 		if(!newhooklist.isEmpty()){
 			readies.put(inClass+method+desc, newhooklist);
 			return true;
@@ -77,7 +77,7 @@ public class GeneralHookManager{
 	// all hooks need to be registered before being first-use, otherwise it will be too late.
 	// (I'll most likely change this design in the future, but it works as a temporary solution.)
 	public MultiPathMapPlus<String, MultiPathMapPlus<String, MultiPathMapPlus<String, HookSegmentList>>> hooks = new MultiPathMapPlus();
-	private List<HookSegmentList> getHookList(String fromClass, String method, String desc){
+	private List<HookSegmentList> getHookList(ClassLoader fromLoader, String fromClass, String method, String desc){
 		Collection<HookSegmentList> ret = new HashSet();
 		/*
 		Iterator<MultiPathMapPlus<String, MultiPathMapPlus<String, HookSegmentList>>> i1 = hooks.get(fromClass).iterator();
@@ -88,7 +88,7 @@ public class GeneralHookManager{
 				ret.addAll(add);
 			}
 		}*/
-		Collection<String> superClasses = ClassData.INSTANCE.getAllSupers(fromClass);
+		Collection<String> superClasses = ClassData.INSTANCE.getAllSupers(fromLoader, fromClass);
 		MultiPathMapPlus temp = null;
 		
 		//get the class data
@@ -232,7 +232,7 @@ public class GeneralHookManager{
 	public void addHook(ModHook hook){
 		CallData data = hook.call.data;
 		String forClass = data.inClass;
-		forClass = ObfuscationHelper3.unprepareClassName2(ObfuscationHelper3.prepareClassName2(forClass));//TODO
+		forClass = ObfuscationHelper3.unprepareClassName2(ObfuscationHelper3.prepareClassName2(forClass));
 		MultiPathEnum_Plus pathClass = data.pathClass;
 		String method = data.methodName;
 		MultiPathEnum_Plus methodPath = data.pathMethod;

@@ -49,7 +49,7 @@ public class MethodInjectionAndSuperCorrectionTransformer implements IClassManip
 		
 		ObfuscationHelper3 obf = (ObfuscationHelper3) (PMLMain.instance.getObfHelper());
 		List<String> eachClassSynonymn = obf.classNames.get(className);
-		Collection<String> supers = ClassData.INSTANCE.getAllSupers(className);
+		Collection<String> supers = ClassData.INSTANCE.getAllSupers(loader, className);
 		
 		for(String eachOfMySynonymns : eachClassSynonymn){
 		//add the methods
