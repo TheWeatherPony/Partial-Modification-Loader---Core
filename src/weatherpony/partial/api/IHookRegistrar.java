@@ -9,20 +9,21 @@ import weatherpony.partial.ICallListener;
 public interface IHookRegistrar {
 
 	public void register(String mod, CallData data, ICallListener call);
-
+	public void register(CallData data, ICallListener call, String mod);
 	/**
 	 * This is to register calls that are pre-rigged to a CallWrapper. This allows mod makers to connect however they wish.
 	 * @param mod - the name of your mod
 	 * @param cw - an instance of {@link#CallWrapper}
 	 */
 	public void register(String mod, CallWrapper cw);
-
+	public void register(CallWrapper cw, String mod);
 	/**
 	 * This is to register calls that are pre-rigged to CallWrappers, en-mass. 
 	 * @param mod - the name of your mod
 	 * @param cws - a list of {@link#CallWrapper} instances
 	 */
 	public void register(String mod, List<CallWrapper> cws);
+	public void register(List<CallWrapper> cws, String mod);
 	
 	/**
 	 * This is to register for PML to override a super method in the given class. The definition of the created method is such that it calls it's super method and returns the result.</br>

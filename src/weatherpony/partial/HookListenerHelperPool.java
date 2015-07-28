@@ -12,11 +12,24 @@ import weatherpony.partial.internal.GeneralHookManager;
 import weatherpony.partial.internal.ModHook;
 
 public final class HookListenerHelperPool<RetType>{
-	public HookListenerHelperPool(HookClassHelper hookClassHelper, List<ModHook<RetType>> listeners, CallWrapper<RetType> proxy){
+	public HookListenerHelperPool(HookClassHelper hookClassHelper, List<ModHook<RetType>> listeners, CallWrapper<RetType> proxy, String methodName, String methodDesc){
 		this.listeners = listeners;
 		this.proxy = proxy;
 		this.classCollection = hookClassHelper;
+		this.methodName = methodName;
+		this.methodDesc = methodDesc;
 		generateHookListenerHelperData();
+	}
+	private final String methodName;
+	private final String methodDesc;
+	protected String getMethodName(){
+		return this.methodName;
+	}
+	protected String getMethodDesc(){
+		return this.methodDesc;
+	}
+	protected Class getClassAbout(){
+		return this.classCollection.getClassAbout();
 	}
 	protected final HookClassHelper classCollection;
 	private final List<ModHook<RetType>> listeners;

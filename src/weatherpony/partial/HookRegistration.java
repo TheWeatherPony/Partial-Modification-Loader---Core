@@ -32,11 +32,19 @@ public class HookRegistration implements IHookRegistrar{
 		}
 	}
 	@Override
-	public void register(String mod, CallData data, ICallListener call){
+	public void register(CallData data, ICallListener call, String mod){
 		this.register(mod, new CallWrapperI(data, call));
 	}
 	@Override
+	public void register(String mod, CallData data, ICallListener call){
+		this.register(data, call, mod);
+	}
+	@Override
 	public void register(String mod, CallWrapper cw){
+		this.register(cw, mod);
+	}
+	@Override
+	public void register(CallWrapper cw, String mod){
 		if(cw == null)
 			return;
 		GeneralHookManager.register(mod, cw);
@@ -44,12 +52,16 @@ public class HookRegistration implements IHookRegistrar{
 		//hooks.add(cw);
 	}
 	@Override
-	public void register(String mod, List<CallWrapper> cws){
+	public void register(List<CallWrapper> cws, String mod){
 		if(cws == null || cws.isEmpty())
 			return;
 		GeneralHookManager.register(mod, cws);
 		//List<CallWrapper> hooks = HookListing.INSTANCE.getMod_make(mod);
 		//hooks.addAll(cws);	
+	}
+	@Override
+	public void register(String mod, List<CallWrapper> cws){
+		this.register(cws, mod);
 	}
 	@Override
 	public void registerForSuperOverride(String inClass, String method,	String desc, String expectedToOverrideFrom, String originalSource){

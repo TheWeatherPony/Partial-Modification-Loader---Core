@@ -54,7 +54,7 @@ public class GeneralHookManager{
 			generated.put(inClass, genInner = new HookClassHelper(inClass));
 		}
 		String sec = secondKey(method, desc);
-		genInner.put(sec,readies.remove(inClass+method+desc), proxy);
+		genInner.put(sec,readies.remove(inClass+method+desc), proxy, method, desc);
 	}
 	
 	HashMap<String, Boolean> mods = new HashMap();

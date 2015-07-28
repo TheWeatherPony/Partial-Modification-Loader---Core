@@ -40,8 +40,11 @@ public final class HookClassHelper{
 		this.myLookup = lookup;
 		this.self = caller;
 	}
-	public void put(String sec, List<ModHook> remove, CallWrapper proxy){
-		final HookListenerHelperPool pool = new HookListenerHelperPool(this, remove, proxy);
+	public Class getClassAbout(){
+		return this.self;
+	}
+	public void put(String sec, List<ModHook> remove, CallWrapper proxy, String methodName, String methodDesc){
+		final HookListenerHelperPool pool = new HookListenerHelperPool(this, remove, proxy, methodName, methodDesc);
 		this.hooks.put(sec, pool);
 	}
 	private HashMap<MethodHandleFetchData, MethodHandle> lookedUpSupers = new HashMap(0);

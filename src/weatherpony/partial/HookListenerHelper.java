@@ -99,4 +99,13 @@ public class HookListenerHelper<RetType>{
 	public ReflectionAssistance getReflectionHelper(){
 		return PMLMain.reflectHelper;
 	}
+	public String getMethodName(){
+		return this.pool.getMethodName();
+	}
+	public String getMethodDesc(){
+		return this.pool.getMethodDesc();
+	}
+	public Class getClassAbout(){
+		return this.pool.getClassAbout();
+	}
 }
