@@ -207,8 +207,8 @@ public class HookInjectorTransformer implements IClassManipulator{
 				lookupMethod.visitMaxs(2,0);
 				lookupMethod.visitEnd();
 			
-			tree.accept(cw);
 			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			tree.accept(cw);
 			/*try {
 				Launch.classLoader.addURL(classsPath.toURI().toURL());
 			} catch (MalformedURLException e) {
