@@ -30,6 +30,6 @@ public class PMLStart implements Callable<Callable<Void>>{
 	}
 	@Override
 	public Callable<Void> call() throws Exception{
-		return (Callable<Void>) (Class.forName("weatherpony.partial.launch.PMLMain", true, Thread.currentThread().getContextClassLoader()).getConstructor().newInstance());
+		return (Callable<Void>) Thread.currentThread().getContextClassLoader().loadClass("weatherpony.partial.launch.PMLMain").getConstructor().newInstance();
 	}
 }

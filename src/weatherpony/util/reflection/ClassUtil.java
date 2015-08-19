@@ -5,8 +5,8 @@ import org.objectweb.asm.Type;
 public class ClassUtil{
 	@Deprecated
 	public static Class forName(String name, ClassLoader loader) throws Throwable{
-		if(name.length() > 1){ 
-			return Class.forName(name, false, loader); 
+		if(name.length() > 1){
+			return loader.loadClass(name);
 		} 
 		char c = name.charAt(0); 
 		switch(c){//this might not be needed, but it's good anyways. 

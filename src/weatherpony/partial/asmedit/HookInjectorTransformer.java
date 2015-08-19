@@ -26,7 +26,7 @@ import org.objectweb.asm.tree.MethodNode;
 import weatherpony.partial.CallWrapper;
 import weatherpony.partial.internal.GeneralHookManager;
 import weatherpony.pml.launch.IClassManipulator;
-import weatherpony.pml.launch.PMLRoot;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 import com.google.common.base.Throwables;
 
@@ -128,7 +128,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 		String transformed_slash = className.replace('.', '/');
 		ClassReader cr = new ClassReader(bytes);
 		ClassNode tree = new ClassNode();
-		cr.accept(tree, /*ClassReader.EXPAND_FRAMES | */ClassReader.SKIP_FRAMES);
+		cr.accept(tree, ClassReader.EXPAND_FRAMES);
 		if(!className.equals(tree.name.replace('/', '.'))){
 			throw new RuntimeException();
 		}
@@ -156,11 +156,11 @@ public class HookInjectorTransformer implements IClassManipulator{
 			//this method needs to be transformed.
 			changedAnything = true;
 			add.add(generateReplacement(methodnode, /*tree.name*/className));
-			methodnode.name = this.mirrorName(className, methodName, methodDesc);
+			methodnode.name = mirrorName(className, methodName, methodDesc);
 			methodnode.access = this.publicAccess(methodnode.access);
 			
 			ClassNode proxy = this.generateProxy(transformed_slash, methodName, methodDesc, (methodnode.access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC);
-			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+			ClassWriter cw = new ClassWriter(0);
 			proxy.accept(cw);
 			this.defineClass(loader, proxy.name.replace('/', '.'), cw.toByteArray());
 			proxiesMade.add(proxy.name.replace('/', '.'));
@@ -204,11 +204,11 @@ public class HookInjectorTransformer implements IClassManipulator{
 				Label l1 = new Label();
 				lookupMethod.visitLabel(l1);
 				lookupMethod.visitInsn(Opcodes.RETURN);
-				lookupMethod.visitMaxs(2, 0);
+				lookupMethod.visitMaxs(2,0);
 				lookupMethod.visitEnd();
 			
-			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 			tree.accept(cw);
+			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 			/*try {
 				Launch.classLoader.addURL(classsPath.toURI().toURL());
 			} catch (MalformedURLException e) {
@@ -216,7 +216,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 			}*/
 			for(String each : proxiesMade){
 				try {
-					registerProxy((CallWrapper) Class.forName(each, true, loader).newInstance());//this is alright, since I'm not needing to work further ASM on it.
+					registerProxy((CallWrapper) loader.loadClass(each).newInstance());//this is alright, since I'm not needing to work further ASM on it.
 				} catch (Exception e) {
 					throw Throwables.propagate(e);
 				}
@@ -275,25 +275,19 @@ public class HookInjectorTransformer implements IClassManipulator{
 		Label l2 = new Label();
 		mv.visitTryCatchBlock(l0, l1, l2, WrappedExceptionInternal);
 		mv.visitLabel(l0);
-		int paramsize = addHookCall(change, mv, inClass, l1);
-		addCatchBlock(change, mv, paramsize, l2);
-		
+		int params = addHookCall(change, mv, inClass, l1);
+		addCatchBlock(change, mv, params, l2);//2,1
 		return mv;
 	}
 	private int addHookCall(MethodNode from, MethodVisitor mv, String inClass, Label normalreturnlabel){
-		addgetHookCallInstance(mv);
 		//prepares the info about who this hook is
 			mv.visitLdcInsn(inClass);
 			mv.visitLdcInsn(from.name);
 			mv.visitLdcInsn(from.desc);
-		
-		int ret = addParameterArray(from, mv);//prepares the parameter(+this) info
+		int params = addParameterArray(from, mv);//prepares the parameter(+this) info
 		addHookCall(mv);
-		addReturnAndCast(from, mv, normalreturnlabel);
-		return ret;
-	}
-	private void addgetHookCallInstance(MethodVisitor mv){
-		//this is leftover from when I used a public static instance variable
+		addReturnAndCast(from, mv, normalreturnlabel);//requires a stack size of 1 or 2. This fits in the stack size of 3 needed for the hook info
+		return params;
 	}
 	private void addHookCall(MethodVisitor mv){
 		mv.visitMethodInsn(Opcodes.INVOKESTATIC, HookListingInternal, HookListingMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
@@ -315,7 +309,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 		// Create array with length equal to number of parameters
 	    mv.visitIntInsn(Opcodes.BIPUSH, paramLength);
 	    mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
-	    
+	    int stackSizeNeeded = 2;
 	    
 	    if(isNotStatic){
 		    //add the "this" instance
@@ -327,7 +321,6 @@ public class HookInjectorTransformer implements IClassManipulator{
 	    	//add null, since this is static.
 	    	//already done, since the elements initialize to null :)
 	    }
-	    
 	    
 	    //mv.visitVarInsn(Opcodes.ASTORE, paramLength);
 	    
@@ -384,9 +377,10 @@ public class HookInjectorTransformer implements IClassManipulator{
 	        i++;
 	        storeIndex++;
 	    }
+	    	
 	    return i;
 	}
-	
+	//requires a stack size of either 1 or 2, depending on the return type
 	private void addReturnAndCast(MethodNode from, MethodVisitor mv, Label returnlabel){
 		Type returntype = Type.getReturnType(from.desc);
 		if(returntype.equals(Type.VOID_TYPE)){//void
@@ -431,7 +425,6 @@ public class HookInjectorTransformer implements IClassManipulator{
 			mv.visitLabel(returnlabel);
 			mv.visitInsn(Opcodes.ARETURN);
 		}
-		
 	}
 	
 	private void addCatchBlock(MethodNode from, MethodVisitor mv, int nextVar, Label catchlabel){
@@ -525,7 +518,8 @@ public class HookInjectorTransformer implements IClassManipulator{
 			int paramSize = paramTypes.length;
 			int index = 1;
 			int pos = 0;
-			
+			int maxStackSize = 0;
+			boolean longOrDoubleInvolved = false;
 			if(isStatic){
 				//index = 1;//skip the "this", since it's static (it's null)
 			}else{
@@ -534,11 +528,17 @@ public class HookInjectorTransformer implements IClassManipulator{
 				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, HookListenerHelperInternal, HookListenerHelperGetParamName, HookListenerHelperGetParamDesc);//get the variable
 				//mv.visitTypeInsn(Opcodes.CHECKCAST, "net/minecraft/world/World");
 				mv.visitTypeInsn(Opcodes.CHECKCAST, inClass);
+				maxStackSize = 2;
 			}
+			boolean params = false;
 			for(;pos<paramSize;index++,pos++){
 				Type tp = paramTypes[pos];
 				mv.visitVarInsn(Opcodes.ALOAD, 1);//push the helper
 				mv.visitIntInsn(Opcodes.BIPUSH, index);//push the index
+				if(!params){
+					maxStackSize+=2;
+					params = true;
+				}
 				mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, HookListenerHelperInternal, HookListenerHelperGetParamName, HookListenerHelperGetParamDesc);//get the variable
 				//cast it to the right type
 				if (tp.equals(Type.BOOLEAN_TYPE)) {
@@ -564,6 +564,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 		        else if (tp.equals(Type.LONG_TYPE)) {
 		        	mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Long");
 					mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J");
+					longOrDoubleInvolved = true;
 		        }
 		        else if (tp.equals(Type.FLOAT_TYPE)) {
 		        	mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Float");
@@ -572,6 +573,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 		        else if (tp.equals(Type.DOUBLE_TYPE)) {
 		        	mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Double");
 					mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D");
+					longOrDoubleInvolved = true;
 		        }
 		        else{
 		        	String wanted = tp.getInternalName();
@@ -579,12 +581,15 @@ public class HookInjectorTransformer implements IClassManipulator{
 		        		mv.visitTypeInsn(Opcodes.CHECKCAST, tp.getInternalName());
 		        	
 		        }
+				maxStackSize++;
 			}
+			if(longOrDoubleInvolved)//longs and double take 2 slots
+				maxStackSize++;
 			//call the method, and call it the right way
 			mv.visitMethodInsn((isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL), inClass, mirrorName(inClass, method, desc), desc);
 			//return the returned value as an Object (of the right type)
 			Type returntype = Type.getReturnType(desc);
-			
+			int returnSize = 1;
 			if (returntype.equals(Type.BOOLEAN_TYPE)) {
 	            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
 	        }
@@ -602,23 +607,27 @@ public class HookInjectorTransformer implements IClassManipulator{
 	        }
 	        else if (returntype.equals(Type.LONG_TYPE)) {
 	            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
+	            returnSize = 2;
 	        }
 	        else if (returntype.equals(Type.FLOAT_TYPE)) {
 	            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
 	        }
 	        else if (returntype.equals(Type.DOUBLE_TYPE)) {
 	            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
+	            returnSize =2;
 	        }else if(returntype.equals(Type.VOID_TYPE)){
 	        	mv.visitInsn(Opcodes.ACONST_NULL);
 	        }
 	        else{}
 	        mv.visitTypeInsn(Opcodes.CHECKCAST, focusedGenericReturnInternal);
 			mv.visitInsn(Opcodes.ARETURN);
-
+			if(returnSize > maxStackSize)
+				maxStackSize = returnSize;
 			Label l1 = new Label();
 			mv.visitLabel(l1);
 			mv.visitLocalVariable("this", "L"+proxyClassName+";", null, l0, l1, 0);
 			mv.visitLocalVariable("hooks", CallWrapperInternalObject, HookListenerHelperGenFocused, l0, l1, 1);
+			mv.visitMaxs(maxStackSize, 2);
 			//mv.visitMaxs(4, 2);
 			mv.visitEnd();
 			
@@ -718,7 +727,7 @@ public class HookInjectorTransformer implements IClassManipulator{
 		File saveParent = save.getParentFile();
 		if(!saveParent.exists())
 			saveParent.mkdirs();
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		ClassWriter cw = new ClassWriter(0/*ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES*/);
 		forClass.accept(cw);
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(save));

@@ -26,7 +26,7 @@ import weatherpony.pml.launch.PMLRoot;
 
 public class PMLMain implements Callable<Void>{
 	public static final int PML_majorVersion = 8;
-	public static final int PML_minorVersion = 2;
+	public static final int PML_minorVersion = 6;
 	public static PMLMain instance;
 	public static GeneralHookManager hookmanager;
 	

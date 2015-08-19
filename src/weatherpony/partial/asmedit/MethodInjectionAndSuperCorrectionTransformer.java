@@ -185,7 +185,7 @@ public class MethodInjectionAndSuperCorrectionTransformer implements IClassManip
 		}*///FIXME
 		
 		if(hasChanged){
-			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS);
+			ClassWriter cw = new ClassWriter(0 /*ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS*/);
 			tree.accept(cw);
 			return cw.toByteArray();
 		}
